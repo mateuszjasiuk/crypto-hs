@@ -25,7 +25,7 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Caesar
   other-modules:
       Paths_crypto_hs
   hs-source-dirs:
