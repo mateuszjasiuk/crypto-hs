@@ -1,41 +1,46 @@
 module Caesar
-    ( cipher
-    ) where
-import Data.Char
-import Data.List
-import Text.Read
+  ( cipherIO
+  ) where
+import           Data.Char
+import           Data.List
+import           Text.Read
 
 alphabet = "abcdefghijklmnopqrstuvwxyz"
 
-shift word amount op = map (shiftSingleChar amount op) word
+shiftSingleChar key op c = do
+  let maybeIdx = elemIndex c alphabet
+  let abcLen   = length alphabet
+  case maybeIdx of
+    Just idx -> alphabet !! (((op idx key `rem` abcLen) + abcLen) `rem` abcLen)
+    Nothing  -> error "WTF"
 
-shiftSingleChar amount op c = do
-    let maybeIdx = elemIndex c alphabet
-    case maybeIdx of
-        Just idx -> alphabet!!(op idx amount `rem` length alphabet)
-        Nothing -> error "WTF" 
+cipher text key op = map (shiftSingleChar key op) text
 
-cipher t = case t of "1" -> caesarEncryptIO
-                     "2" -> caesarDecryptIO
-                     _ -> error "Dude pls!"
+encrypt plaintext key = cipher plaintext key (+)
+decrypt ciphertext key = cipher ciphertext key (-)
 
-caesarEncryptIO = do 
-    putStrLn "Plaintext:"
-    plaintext <- getLine
-    putStrLn "Shift amount:"
-    amountStr <- getLine
-    let amount = case (readMaybe amountStr :: Maybe Int) of
-                    Just shift -> shift
-                    Nothing -> error "nothing"
-    putStrLn (shift plaintext amount (+))
 
-caesarDecryptIO = do
-    putStrLn "Ciphertext:"
-    plaintext <- getLine
-    putStrLn "Shift amount:"
-    amountStr <- getLine
-    let amount = case (readMaybe amountStr :: Maybe Int) of
-                    Just shift -> shift
-                    Nothing -> error "nothing"
-    putStrLn (shift plaintext amount (-))
+cipherIO t = case t of
+  "1" -> encryptIO
+  "2" -> decryptIO
+  _   -> error "Dude pls!"
 
+encryptIO = do
+  putStrLn "Plaintext:"
+  plaintext <- getLine
+  putStrLn "Key(number):"
+  keyStr <- getLine
+  let key = case (readMaybe keyStr :: Maybe Int) of
+        Just shift -> shift
+        Nothing    -> error "nothing"
+  putStrLn (encrypt plaintext key)
+
+decryptIO = do
+  putStrLn "Ciphertext:"
+  plaintext <- getLine
+  putStrLn "Key(number):"
+  keyStr <- getLine
+  let key = case (readMaybe keyStr :: Maybe Int) of
+        Just shift -> shift
+        Nothing    -> error "nothing"
+  putStrLn (decrypt plaintext key)
