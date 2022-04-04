@@ -3,16 +3,15 @@ module Caesar.Core
   , encrypt
   , decrypt
   ) where
+import qualified Common
 import           Data.Char
 import           Data.List
 import           Text.Read
 
-alphabet = ['a' .. 'z']
-abcLen = length alphabet
-
 type Op = Int -> Int -> Int
 type Key = Int
 -- TODO: Not sure if it makes sense to wrap String, will leave for now
+-- TODO: Move to common?
 newtype Text = Text String
   deriving (Eq, Ord, Show)
 
@@ -27,9 +26,9 @@ shiftSingleChar key op c = do
   case maybeIdx of
     -- TODO: move this to common module
     -- TODO: try natural numbers?
-    Just idx -> alphabet !! (((op idx key `rem` abcLen) + abcLen) `rem` abcLen)
+    Just idx -> Common.charByIdx $ op idx key
     Nothing  -> error "WTF"
-  where maybeIdx = elemIndex c alphabet
+  where maybeIdx = elemIndex c Common.abc
 
 cipher :: Text -> Key -> Op -> Text
 cipher text key op = mapText (shiftSingleChar key op) text

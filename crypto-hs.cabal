@@ -27,6 +27,7 @@ library
   exposed-modules:
       Caesar.Core
       Caesar.IO
+      Common
       Des
       Vigenere
   other-modules:

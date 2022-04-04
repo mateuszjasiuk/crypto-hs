@@ -1,15 +1,14 @@
 module Vigenere
   ( cipherIO
   ) where
+import qualified Common
 import           Data.Char
 import           Data.List
 import           Text.Read
 
-alphabet = "abcdefghijklmnopqrstuvwxyz"
-
 keyToNumbers = map
   (\c -> do
-    let maybeIdx = elemIndex c alphabet
+    let maybeIdx = elemIndex c Common.abc
     case maybeIdx of
       Just idx -> idx
       Nothing  -> error "WTF"
@@ -17,14 +16,13 @@ keyToNumbers = map
 
 cipher text key op = do
   let shiftCycles = take (length text) $ cycle (keyToNumbers key)
-  let abcLen      = length alphabet
   zipWith
     (\c i -> do
-      let maybeIdx = elemIndex c alphabet
+      let maybeIdx = elemIndex c Common.abc
       let idx = case maybeIdx of
             Just idx -> idx
             Nothing  -> error "WTF"
-      alphabet !! (((op idx i `rem` abcLen) + abcLen) `rem` abcLen)
+      Common.charByIdx $ op idx i
     )
     text
     shiftCycles
