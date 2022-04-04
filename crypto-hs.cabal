@@ -25,7 +25,8 @@ source-repository head
 
 library
   exposed-modules:
-      Caesar
+      Caesar.Core
+      Caesar.IO
       Des
       Vigenere
   other-modules:
@@ -46,17 +47,28 @@ executable crypto-hs-exe
   build-depends:
       base >=4.7 && <5
     , crypto-hs
+    , tasty-discover
   default-language: Haskell2010
 
 test-suite crypto-hs-test
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: Driver.hs
   other-modules:
+      CaesarTest
+      DiscoverTest
       Paths_crypto_hs
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      base
     , crypto-hs
+    , hedgehog
+    , hspec
+    , tasty
+    , tasty-discover
+    , tasty-hedgehog
+    , tasty-hspec
+    , tasty-hunit
+    , tasty-quickcheck
+    , tasty-smallcheck
   default-language: Haskell2010

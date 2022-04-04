@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
-import qualified Caesar
+import qualified Caesar.IO                     as CaesarIO
 import qualified Des
 import qualified Vigenere
 
@@ -11,7 +11,7 @@ main = do
   putStrLn "2) Vigenere's"
   cipher <- getLine
   let !cipherFn = case cipher of
-        "1" -> Caesar.cipherIO
+        "1" -> CaesarIO.cipherIO
         "2" -> Vigenere.cipherIO
         _   -> error "Dude pls! cipher"
   putStrLn "1) Encrypt"

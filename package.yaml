@@ -35,14 +35,21 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - crypto-hs
+    - "tasty-discover"
 
 tests:
   crypto-hs-test:
-    main:                Spec.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+    main: "Driver.hs"
+    source-dirs: "test"
     dependencies:
     - crypto-hs
+    - "base"
+    - "tasty"
+    - "tasty-discover"
+    - "tasty-hspec"
+    - "tasty-hunit"
+    - "tasty-quickcheck"
+    - "tasty-smallcheck"
+    - "tasty-hedgehog"
+    - "hedgehog"
+    - "hspec"
