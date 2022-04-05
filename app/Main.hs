@@ -2,7 +2,7 @@
 module Main where
 import qualified Caesar.IO                     as CaesarIO
 import qualified Des
-import qualified Vigenere
+import qualified Vigenere.IO                   as VigenereIO
 
 main :: IO ()
 main = do
@@ -12,7 +12,7 @@ main = do
   cipher <- getLine
   let !cipherFn = case cipher of
         "1" -> CaesarIO.cipherIO
-        "2" -> Vigenere.cipherIO
+        "2" -> VigenereIO.cipherIO
         _   -> error "Dude pls! cipher"
   putStrLn "1) Encrypt"
   putStrLn "2) Decrypt"
@@ -20,5 +20,6 @@ main = do
   cipherFn action
 
 -- TODO:
--- tests
--- common file - strings, functions
+-- figure out when to wrap types / common types?
+-- typeclass for ciphers?
+-- strings to consts

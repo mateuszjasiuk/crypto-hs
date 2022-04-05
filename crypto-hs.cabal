@@ -29,7 +29,8 @@ library
       Caesar.IO
       Common
       Des
-      Vigenere
+      Vigenere.Core
+      Vigenere.IO
   other-modules:
       Paths_crypto_hs
   hs-source-dirs:

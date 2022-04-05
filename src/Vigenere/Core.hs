@@ -1,10 +1,9 @@
-module Vigenere
-  ( cipherIO
+module Vigenere.Core
+  ( encrypt
+  , decrypt
   ) where
 import qualified Common
-import           Data.Char
 import           Data.List
-import           Text.Read
 
 type Op = Int -> Int -> Int
 type Key = String
@@ -35,21 +34,3 @@ encrypt plaintext key = cipher plaintext key (+)
 decrypt :: Ciphertext -> Key -> Plaintext
 decrypt plaintext key = cipher plaintext key (-)
 
-cipherIO t = case t of
-  "1" -> encryptIO
-  "2" -> decryptIO
-  _   -> error "Dude pls!"
-
-encryptIO = do
-  putStrLn "Plaintext [a-z]:"
-  plaintext <- getLine
-  putStrLn "Key [a-z]:"
-  keyStr <- getLine
-  putStrLn (encrypt plaintext keyStr)
-
-decryptIO = do
-  putStrLn "Ciphertext [a-z]:"
-  plaintext <- getLine
-  putStrLn "Key [a-z]:"
-  keyStr <- getLine
-  putStrLn (decrypt plaintext keyStr)
