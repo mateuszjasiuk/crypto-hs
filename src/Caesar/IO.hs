@@ -14,9 +14,9 @@ cipherIO t = case t of
 
 encryptIO :: IO ()
 encryptIO = do
-  putStrLn "Plaintext:"
+  putStrLn "Plaintext [a-z]:"
   plaintext <- getLine
-  putStrLn "Key(number):"
+  putStrLn "Key [N]:"
   keyStr <- getLine
   let key = case (readMaybe keyStr :: Maybe Int) of
         Just shift -> shift
@@ -25,9 +25,9 @@ encryptIO = do
 
 decryptIO :: IO ()
 decryptIO = do
-  putStrLn "Ciphertext:"
+  putStrLn "Ciphertext [a-z]"
   plaintext <- getLine
-  putStrLn "Key(number):"
+  putStrLn "Key [N]:"
   keyStr <- getLine
   let key = case (readMaybe keyStr :: Maybe Int) of
         Just shift -> shift

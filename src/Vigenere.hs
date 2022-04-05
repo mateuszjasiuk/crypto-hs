@@ -6,28 +6,29 @@ import           Data.Char
 import           Data.List
 import           Text.Read
 
-keyToNumbers = map
-  (\c -> do
-    let maybeIdx = elemIndex c Common.abc
-    case maybeIdx of
-      Just idx -> idx
-      Nothing  -> error "WTF"
-  )
+type Op = Int -> Int -> Int
 
+charPosition :: Char -> Int
+charPosition c = do
+  case maybeIdx of
+    Just idx -> idx
+    Nothing  -> error "WTF"
+  where maybeIdx = elemIndex c Common.abc
+
+shiftChar :: Op -> Char -> Int -> Char
+shiftChar op char shift = do
+  Common.charByIdx idx
+  where idx = op (charPosition char) shift
+
+cipher :: String -> String -> Op -> String
 cipher text key op = do
-  let shiftCycles = take (length text) $ cycle (keyToNumbers key)
-  zipWith
-    (\c i -> do
-      let maybeIdx = elemIndex c Common.abc
-      let idx = case maybeIdx of
-            Just idx -> idx
-            Nothing  -> error "WTF"
-      Common.charByIdx $ op idx i
-    )
-    text
-    shiftCycles
+  zipWith (shiftChar op) text shiftCycles
+  where shiftCycles = take (length text) $ cycle $ map charPosition key
 
+encrypt :: String -> String -> String
 encrypt plaintext key = cipher plaintext key (+)
+
+decrypt :: String -> String -> String
 decrypt plaintext key = cipher plaintext key (-)
 
 cipherIO t = case t of
@@ -36,15 +37,15 @@ cipherIO t = case t of
   _   -> error "Dude pls!"
 
 encryptIO = do
-  putStrLn "Plaintext:"
+  putStrLn "Plaintext [a-z]:"
   plaintext <- getLine
-  putStrLn "Key(string):"
+  putStrLn "Key [a-z]:"
   keyStr <- getLine
   putStrLn (encrypt plaintext keyStr)
 
 decryptIO = do
-  putStrLn "Ciphertext:"
+  putStrLn "Ciphertext [a-z]:"
   plaintext <- getLine
-  putStrLn "Key(string):"
+  putStrLn "Key [a-z]:"
   keyStr <- getLine
   putStrLn (decrypt plaintext keyStr)
