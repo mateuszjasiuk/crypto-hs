@@ -7,6 +7,10 @@ import           Data.List
 import           Text.Read
 
 type Op = Int -> Int -> Int
+type Key = String
+type Text = String
+type Ciphertext = Text
+type Plaintext = Text
 
 charPosition :: Char -> Int
 charPosition c = do
@@ -20,15 +24,15 @@ shiftChar op char shift = do
   Common.charByIdx idx
   where idx = op (charPosition char) shift
 
-cipher :: String -> String -> Op -> String
+cipher :: Text -> Key -> Op -> Text
 cipher text key op = do
   zipWith (shiftChar op) text shiftCycles
   where shiftCycles = take (length text) $ cycle $ map charPosition key
 
-encrypt :: String -> String -> String
+encrypt :: Plaintext -> Key -> Ciphertext
 encrypt plaintext key = cipher plaintext key (+)
 
-decrypt :: String -> String -> String
+decrypt :: Ciphertext -> Key -> Plaintext
 decrypt plaintext key = cipher plaintext key (-)
 
 cipherIO t = case t of
