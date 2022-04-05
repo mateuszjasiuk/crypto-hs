@@ -11,6 +11,8 @@ type Text = String
 type Ciphertext = Text
 type Plaintext = Text
 
+identityKey = "a"
+
 charPosition :: Char -> Int
 charPosition c = do
   case maybeIdx of
@@ -23,10 +25,13 @@ shiftChar op char shift = do
   Common.charByIdx idx
   where idx = op (charPosition char) shift
 
-cipher :: Text -> Key -> Op -> Text
-cipher text key op = do
+-- TODO: think about non empty string type?
+cipher' text key op = do
   zipWith (shiftChar op) text shiftCycles
   where shiftCycles = take (length text) $ cycle $ map charPosition key
+
+cipher text key op | null key  = cipher' text identityKey op
+                   | otherwise = cipher' text key op
 
 encrypt :: Plaintext -> Key -> Ciphertext
 encrypt plaintext key = cipher plaintext key (+)

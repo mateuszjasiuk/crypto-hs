@@ -58,6 +58,7 @@ test-suite crypto-hs-test
   other-modules:
       CaesarTest
       DiscoverTest
+      VigenereTest
       Paths_crypto_hs
   hs-source-dirs:
       test

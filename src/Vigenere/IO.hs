@@ -8,16 +8,17 @@ cipherIO t = case t of
   "2" -> decryptIO
   _   -> error "Dude pls!"
 
+
 encryptIO = do
   putStrLn "Plaintext [a-z]:"
   plaintext <- getLine
-  putStrLn "Key [a-z]:"
+  putStrLn "Key [a-z] (default \"a\"):"
   keyStr <- getLine
   putStrLn (Core.encrypt plaintext keyStr)
 
 decryptIO = do
   putStrLn "Ciphertext [a-z]:"
   plaintext <- getLine
-  putStrLn "Key [a-z]:"
+  putStrLn "Key [a-z] (default \"a\"):"
   keyStr <- getLine
   putStrLn (Core.decrypt plaintext keyStr)
