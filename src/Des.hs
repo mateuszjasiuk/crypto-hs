@@ -1,14 +1,29 @@
 module Des
   ( encrypt
   , permutate
+  , drop8thBits
   ) where
 
 import           Data.Bits
 import           Data.Word
 
-
 initialPermIdx :: [(Int, Int)]
 initialPermIdx = zip initialPerm [0 .. 63]
+
+-- 0b01111111
+mask :: Word64
+mask = 0x7F
+
+-- 0b10000000000000000000000000001111
+key :: Word64
+key = 0x800000000000000F
+
+drop8thBit :: Word64 -> Word64 -> Int -> Word64
+drop8thBit key a c = a .|. (key .&. mask `shiftL` (c * 8)) `shiftR` 1
+
+drop8thBits :: Word64 -> Word64
+drop8thBits key =
+  key .&. mask .|. foldl (drop8thBit key) (0 :: Word64) [1 .. 7]
 
 finalPermIdx :: [(Int, Int)]
 finalPermIdx = zip finalPerm [0 .. 63]
@@ -23,7 +38,6 @@ encrypt plaintext =
 decrypt :: Word64 -> Word64
 decrypt ciphertext =
   foldr (xor . permutate ciphertext) (0 :: Word64) finalPermIdx
-
 
 initialPerm =
   [ 58

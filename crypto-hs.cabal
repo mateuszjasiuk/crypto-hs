@@ -57,6 +57,7 @@ test-suite crypto-hs-test
   main-is: Driver.hs
   other-modules:
       CaesarTest
+      DesTest
       DiscoverTest
       VigenereTest
       Paths_crypto_hs
