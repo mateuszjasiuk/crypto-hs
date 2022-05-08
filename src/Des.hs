@@ -1,50 +1,81 @@
 module Des
   ( encrypt
   , permutate
-  , drop8thBits
   , parityDrop
   , splitKey
   ) where
 
 import           Data.Bits
+import           Data.Char                      ( intToDigit )
 import           Data.Word
+import           Numeric                        ( showHex
+                                                , showIntAtBase
+                                                )
 
--- 0b01111111
 mask :: Word64
 mask = 0x7F
 
 key :: Word64
-key = 0xFFFFFFFFFFFFFFFF
+key = 0x133457799BBCDFF1
 
-drop8thBit :: Word64 -> Word64 -> Int -> Word64
-drop8thBit key a c = a .|. (key .&. mask `shiftL` (c * 8)) `shiftR` 1
-
-drop8thBits :: Word64 -> Word64
-drop8thBits key =
-  key .&. mask .|. foldl (drop8thBit key) (0 :: Word64) [1 .. 7]
+toHex int = showHex int ""
+toBin int = showIntAtBase 2 intToDigit int ""
 
 permToMap :: [Int] -> [(Int, Int)]
 permToMap p = zip p [0 .. (length p)]
 
-permutateOne :: Word64 -> (Int, Int) -> Word64
--- (x - 1) and (y - x + 1) because haskell indexes from 0 and perm tables index from 1
-permutateOne word (x, y) = (word .&. bit (x - 1)) `shift` (y - x + 1)
+permutateOne :: Word64 -> Int -> Int -> (Int, Int) -> Word64
+permutateOne word from to (x, y) =
+  (word .&. bit (from - x)) `shift` (to - (from - x) - y - 1)
 
-permutate :: Word64 -> [Int] -> Word64
-permutate word p = foldr (xor . permutateOne word) (0 :: Word64) (permToMap p)
+permutate :: Word64 -> [Int] -> Int -> Int -> Word64
+permutate word p from to =
+  foldr (xor . permutateOne word from to) (0 :: Word64) (permToMap p)
 
 parityDrop :: Word64 -> Word64
-parityDrop key = permutate key keyp
+parityDrop key = permutate key keyp 64 56
 
--- TODO: Change res to (Word32, Word32)
 splitKey :: Word64 -> (Word64, Word64)
-splitKey key = (key .&. 0xFFFFFFF, (key .&. 0xFFFFFFF0000000) `shiftR` 28)
+splitKey key = ((key .&. 0xFFFFFFF0000000) `shiftR` 28, key .&. 0xFFFFFFF)
+
+rotateNthLeft :: Int -> Word64 -> Word64 -> Word64
+rotateNthLeft nth mask word = do
+  let rotatedBit  = (bit nth .&. word) `shiftR` nth
+  let shiftedWord = word `shiftL` 1
+  (rotatedBit .|. shiftedWord) .&. mask
+
+shiftKeyHalf :: Word64 -> Int -> Word64
+shiftKeyHalf key shift = shiftKeyHalf' shift key
+ where
+  shiftKeyHalf' 0 res = res
+  shiftKeyHalf' shift res =
+    shiftKeyHalf' (shift - 1) (rotateNthLeft 27 0xFFFFFFF res)
+
+shiftKeyHalves :: (Word64, Word64) -> Int -> (Word64, Word64)
+shiftKeyHalves (key1, key2) shift =
+  (shiftKeyHalf key1 shift, shiftKeyHalf key2 shift)
+
+joinKeyHalves :: (Word64, Word64) -> Word64
+joinKeyHalves (key1, key2) = (key1 `shiftL` 28) .|. key2
+
+compressKey :: Word64 -> Word64
+compressKey key = permutate key compBox 56 48
+
+generateKeys' :: Int -> [Word64] -> (Word64, Word64) -> [Word64]
+generateKeys' 16 res _         = res
+generateKeys' n  res keyHalves = do
+  let shifted  = shiftKeyHalves keyHalves $ shiftTable !! n
+      roundKey = compressKey . joinKeyHalves $ shifted
+  generateKeys' (n + 1) (res ++ [roundKey]) shifted
+
+generateKeys :: Word64 -> [Word64]
+generateKeys key = generateKeys' 0 [] (splitKey . parityDrop $ key)
 
 encrypt :: Word64 -> Word64
-encrypt plaintext = permutate plaintext initialPerm
+encrypt plaintext = permutate plaintext initialPerm 64 64
 
 decrypt :: Word64 -> Word64
-decrypt ciphertext = permutate ciphertext finalPerm
+decrypt ciphertext = permutate ciphertext finalPerm 64 64
 
 initialPerm =
   [ 58
@@ -236,4 +267,57 @@ keyp =
   , 20
   , 12
   , 4
+  ]
+
+shiftTable = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
+
+compBox =
+  [ 14
+  , 17
+  , 11
+  , 24
+  , 1
+  , 5
+  , 3
+  , 28
+  , 15
+  , 6
+  , 21
+  , 10
+  , 23
+  , 19
+  , 12
+  , 4
+  , 26
+  , 8
+  , 16
+  , 7
+  , 27
+  , 20
+  , 13
+  , 2
+  , 41
+  , 52
+  , 31
+  , 37
+  , 47
+  , 55
+  , 30
+  , 40
+  , 51
+  , 45
+  , 33
+  , 48
+  , 44
+  , 49
+  , 39
+  , 56
+  , 34
+  , 53
+  , 46
+  , 42
+  , 50
+  , 36
+  , 29
+  , 32
   ]
