@@ -1,123 +1,59 @@
-module Des
+module Des.Core
   ( encrypt
-  , permutate
-  , parityDrop
-  , splitKey
   ) where
 
 import           Data.Bits
 import           Data.Char                      ( intToDigit )
 import           Data.Word
-import           Debug.Trace
 import           Numeric                        ( showHex
                                                 , showIntAtBase
                                                 )
--- TODO: Move key stuff to key module
--- TODO: Add function types
--- TODO: Create type aliases
--- TODO: Show result as a hex
--- TODO: Move permuatation tables to separate namespace
 
-key :: Word64
-key = 0x133457799BBCDFF1
+import           Des.Common                     ( permutate )
+import           Des.KeyGenerator               ( generateKeys )
 
-testM :: Word64
-testM = 0x0123456789ABCDEF
+-- TODO: write tests :)
+--
+-- Links
+-- https://academic.csuohio.edu/yuc/security/Chapter_06_Data_Encription_Standard.pdf
+-- https://page.math.tu-berlin.de/~kant/teaching/hess/krypto-ws2006/des.htm
+
+-- testK :: Word64
+-- testK = 0x133457799BBCDFF1
+
+-- testM :: Word64
+-- testM = 0x0123456789ABCDEF
+
+-- testRes :: Word64
+-- testRes = 0x85E813540F0AB405
+
+-- sBoxVal a b | trace ("sBoxVal a:" ++ show a ++ "| " ++ "") False = undefined
 
 -- Helpers, maybe it makes sense to implement Show?
 toHex int = showHex int ""
 toBin int = showIntAtBase 2 intToDigit int ""
 
--- Permuatation helpers
-permToMap :: [Int] -> [(Int, Int)]
-permToMap p = zip p [0 .. (length p)]
-
-permutateOne :: Word64 -> Int -> Int -> (Int, Int) -> Word64
-permutateOne word from to (x, y) =
-  (word .&. bit (from - x)) `shift` (to - (from - x) - y - 1)
-
-permutate :: Word64 -> [Int] -> Int -> Int -> Word64
-permutate word p from to =
-  foldr (xor . permutateOne word from to) (0 :: Word64) (permToMap p)
-
 -- Helper to map with indices
 mapInd :: (a -> Int -> b) -> [a] -> [b]
 mapInd f l = zipWith f l [0 ..]
-
-parityDrop :: Word64 -> Word64
-parityDrop key = permutate key keyp 64 56
-
-splitKey :: Word64 -> (Word64, Word64)
-splitKey key = ((key .&. 0xFFFFFFF0000000) `shiftR` 28, key .&. 0xFFFFFFF)
 
 split64Half :: Word64 -> (Word64, Word64)
 split64Half key =
   ((key .&. 0xFFFFFFFF00000000) `shiftR` 32, key .&. 0xFFFFFFFF)
 
-rotateNthLeft :: Int -> Word64 -> Word64 -> Word64
-rotateNthLeft nth mask word = do
-  let nth'        = nth - 1
-      -- Need to rotate by shifting because the type is Word64 and
-      -- word itself might be "smaller"
-      rotatedBit  = (bit nth' .&. word) `shiftR` nth'
-      -- We are shifting to the left to imitate rotation
-      shiftedWord = word `shiftL` 1
-  -- Here we are adding rotated bit to the shifted word and
-  -- applying mask so we zero leftmost bit
-  (rotatedBit .|. shiftedWord) .&. mask
-
-shiftKeyHalf :: Word64 -> Int -> Word64
-shiftKeyHalf key shift = shiftKeyHalf' shift key
- where
-  shiftKeyHalf' 0 res = res
-  -- `shift` is a value taken from shift table, so we either iterate once or twice
-  shiftKeyHalf' shift res =
-    shiftKeyHalf' (shift - 1) (rotateNthLeft 28 0xFFFFFFF res)
-
-shiftKeyHalves :: (Word64, Word64) -> Int -> (Word64, Word64)
-shiftKeyHalves (key1, key2) shift =
-  (shiftKeyHalf key1 shift, shiftKeyHalf key2 shift)
-
-joinKeyHalves :: (Word64, Word64) -> Word64
-joinKeyHalves (key1, key2) = (key1 `shiftL` 28) .|. key2
-
-compressKey :: Word64 -> Word64
-compressKey key = permutate key compBox 56 48
-
-generateKeys' :: Int -> [Word64] -> (Word64, Word64) -> [Word64]
--- There are 16 des rounds so we need 16 round keys
-generateKeys' 16 roundKeys _         = roundKeys
-generateKeys' n  roundKeys keyHalves = do
-  let shifted  = shiftKeyHalves keyHalves $ shiftTable !! n
-      -- We need to compress key from 56 to 48 bits to match the message length
-      -- in the round function
-      roundKey = compressKey . joinKeyHalves $ shifted
-  generateKeys' (n + 1) (roundKeys ++ [roundKey]) shifted
-
-generateKeys :: Word64 -> [Word64]
-generateKeys key = do
-  -- We are dropping every 8th bit from the key to produce 56bit value
-  -- the we are splitting it to two 28bit halves
-  let initialKey = splitKey . parityDrop $ key
-  generateKeys' 0 [] initialKey
-
-
 sBoxRow :: Word64 -> Word64
--- sBoxRow a | trace ("sBoxRow " ++ show a) False = undefined
 sBoxRow m6bit = m6bit .&. 0x01 .|. (m6bit .&. 0x21) `shiftR` 4
 
 sBoxCol :: Word64 -> Word64
--- sBoxCol a | trace ("sBoxCol " ++ show a) False = undefined
 sBoxCol m6bit = (m6bit .&. 0x1E) `shiftR` 1
 
 sBoxVal :: Word64 -> [[Word64]] -> Word64
--- sBoxVal a b | trace ("sBoxVal a:" ++ show a ++ "| " ++ "") False = undefined
 sBoxVal m6Bit box = do
   let col = sBoxCol m6Bit
   let row = sBoxRow m6Bit
   box !! fromIntegral row !! fromIntegral col
 
--- split48to8x6 a | trace ("split48to8x6 " ++ show a) False = undefined
+split48to8x6 :: Word64 -> [Word64]
 split48to8x6 m48 = map splitByIndex [7, 6 .. 0]
   where splitByIndex i = (m48 `shiftR` (i * 6)) .&. 0x3F
 
@@ -137,33 +73,41 @@ des (mL32, mR32) key48 = do
       xord48  = mR48 `xor` key48
       m8x6    = split48to8x6 xord48
       -- We are mixing(confusion) 8x6 bit messages to produce 8x4 messages 
-      -- TODO: check how zipWith works
       m8x4    = zipWith sBoxVal m8x6 sbox
       m32     = join8x4 m8x4
       -- Straight permutation box at the end of des function
       m32perm = permutate m32 per 32 32
   m32perm
 
+roundFn :: (Word64, Word64) -> [Word64] -> (Word64, Word64)
 -- When the keys are empty we return final halves
-roundFn halves          []            = halves
+roundFn halves          []       = halves
 -- We iterate over keys and apply des function
 -- Right half of the message is being passed as the next round's left half
 -- `des` function takes both halves and a current key. Returns new message that we xor with left half of the message
-roundFn halves@(mL, mR) keys@(k : ks) = roundFn (mR, des halves k `xor` mL) ks
+roundFn halves@(mL, mR) (k : ks) = roundFn (mR, des halves k `xor` mL) ks
 
 -- toBin $ encrypt 0x0123456789ABCDEF 0x133457799BBCDFF1
 encrypt :: Word64 -> Word64 -> Word64
 encrypt plaintext key = do
-  let initial  = permutate plaintext initialPerm 64 64
-      keys     = generateKeys key
-      halves   = split64Half initial
-      (mL, mR) = roundFn halves keys
-      m64      = (mR `shiftL` 32) .|. mL
-  permutate m64 finalPerm 64 64
+  let m64initial = permutate plaintext initialPerm 64 64
+      roundKeys  = generateKeys key
+      halves     = split64Half m64initial
+      (mL, mR)   = roundFn halves roundKeys
+      m64        = (mR `shiftL` 32) .|. mL
+      m64final   = permutate m64 finalPerm 64 64
+  m64final
 
 
-decrypt :: Word64 -> Word64
-decrypt ciphertext = permutate ciphertext finalPerm 64 64
+decrypt :: Word64 -> Word64 -> Word64
+decrypt plaintext key = do
+  let m64initial = permutate plaintext initialPerm 64 64
+      roundKeys  = reverse . generateKeys $ key
+      halves     = split64Half m64initial
+      (mL, mR)   = roundFn halves roundKeys
+      m64        = (mR `shiftL` 32) .|. mL
+      m64final   = permutate m64 finalPerm 64 64
+  m64final
 
 initialPerm =
   [ 58
@@ -298,119 +242,7 @@ finalPerm =
   , 57
   , 25
   ]
-keyp =
-  [ 57
-  , 49
-  , 41
-  , 33
-  , 25
-  , 17
-  , 9
-  , 1
-  , 58
-  , 50
-  , 42
-  , 34
-  , 26
-  , 18
-  , 10
-  , 2
-  , 59
-  , 51
-  , 43
-  , 35
-  , 27
-  , 19
-  , 11
-  , 3
-  , 60
-  , 52
-  , 44
-  , 36
-  , 63
-  , 55
-  , 47
-  , 39
-  , 31
-  , 23
-  , 15
-  , 7
-  , 62
-  , 54
-  , 46
-  , 38
-  , 30
-  , 22
-  , 14
-  , 6
-  , 61
-  , 53
-  , 45
-  , 37
-  , 29
-  , 21
-  , 13
-  , 5
-  , 28
-  , 20
-  , 12
-  , 4
-  ]
 
-shiftTable = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
-
-compBox =
-  [ 14
-  , 17
-  , 11
-  , 24
-  , 1
-  , 5
-  , 3
-  , 28
-  , 15
-  , 6
-  , 21
-  , 10
-  , 23
-  , 19
-  , 12
-  , 4
-  , 26
-  , 8
-  , 16
-  , 7
-  , 27
-  , 20
-  , 13
-  , 2
-  , 41
-  , 52
-  , 31
-  , 37
-  , 47
-  , 55
-  , 30
-  , 40
-  , 51
-  , 45
-  , 33
-  , 48
-  , 44
-  , 49
-  , 39
-  , 56
-  , 34
-  , 53
-  , 46
-  , 42
-  , 50
-  , 36
-  , 29
-  , 32
-  ]
-
-expDBox :: [Int]
 expDBox =
   [ 32
   , 1
@@ -462,7 +294,6 @@ expDBox =
   , 1
   ]
 
-sbox :: [[[Word64]]]
 sbox =
   [ [ [14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7]
     , [0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8]

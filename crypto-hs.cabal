@@ -28,7 +28,9 @@ library
       Caesar.Core
       Caesar.IO
       Common
-      Des
+      Des.Common
+      Des.Core
+      Des.KeyGenerator
       Vigenere.Core
       Vigenere.IO
   other-modules:
