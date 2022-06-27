@@ -31,7 +31,8 @@ library
       Des.Common
       Des.Core
       Des.Core.Internal
-      Des.KeyGenerator
+      Des.Key
+      Des.Key.Internal
       Vigenere.Core
       Vigenere.IO
   other-modules:
@@ -61,6 +62,7 @@ test-suite crypto-hs-test
   other-modules:
       CaesarTest
       Des.Core.InternalTest
+      Des.Key.InternalTest
       DiscoverTest
       VigenereTest
       Paths_crypto_hs

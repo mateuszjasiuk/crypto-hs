@@ -1,4 +1,4 @@
-module Des.KeyGenerator
+module Des.Key
   ( generateKeys
   ) where
 
@@ -6,14 +6,10 @@ import           Data.Bits
 import           Data.Word
 
 import           Des.Common                     ( permutate )
-
+import           Des.Key.Internal
 
 parityDrop :: Word64 -> Word64
 parityDrop key = permutate key parityDropTable 64 56
-
-splitKey :: Word64 -> (Word64, Word64)
-splitKey key = ((key .&. 0xFFFFFFF0000000) `shiftR` 28, key .&. 0xFFFFFFF)
-
 
 rotateNthLeft :: Int -> Word64 -> Word64 -> Word64
 rotateNthLeft nth mask word = do
@@ -59,7 +55,7 @@ generateKeys :: Word64 -> [Word64]
 generateKeys key = do
   -- We are dropping every 8th bit from the key to produce 56bit value
   -- the we are splitting it to two 28bit halves
-  let initialKey = splitKey . parityDrop $ key
+  let initialKey = split56Half . parityDrop $ key
   generateKeys' 0 [] initialKey
 
 parityDropTable =

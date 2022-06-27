@@ -12,7 +12,7 @@ import           Numeric                        ( showHex
 
 import           Des.Common                     ( permutate )
 import           Des.Core.Internal
-import           Des.KeyGenerator               ( generateKeys )
+import           Des.Key                        ( generateKeys )
 
 -- TODO: write tests :)
 --
