@@ -1,5 +1,6 @@
 module Des.Core
   ( encrypt
+  , decrypt
   ) where
 
 import           Data.Bits
@@ -10,6 +11,7 @@ import           Numeric                        ( showHex
                                                 )
 
 import           Des.Common                     ( permutate )
+import           Des.Core.Internal
 import           Des.KeyGenerator               ( generateKeys )
 
 -- TODO: write tests :)
@@ -36,10 +38,6 @@ toBin int = showIntAtBase 2 intToDigit int ""
 -- Helper to map with indices
 mapInd :: (a -> Int -> b) -> [a] -> [b]
 mapInd f l = zipWith f l [0 ..]
-
-split64Half :: Word64 -> (Word64, Word64)
-split64Half key =
-  ((key .&. 0xFFFFFFFF00000000) `shiftR` 32, key .&. 0xFFFFFFFF)
 
 sBoxRow :: Word64 -> Word64
 sBoxRow m6bit = m6bit .&. 0x01 .|. (m6bit .&. 0x21) `shiftR` 4
@@ -90,8 +88,8 @@ roundFn halves@(mL, mR) (k : ks) = roundFn (mR, des halves k `xor` mL) ks
 -- toBin $ encrypt 0x0123456789ABCDEF 0x133457799BBCDFF1
 encrypt :: Word64 -> Word64 -> Word64
 encrypt plaintext key = do
-  let m64initial = permutate plaintext initialPerm 64 64
-      roundKeys  = generateKeys key
+  let roundKeys  = generateKeys key
+      m64initial = permutate plaintext initialPerm 64 64
       halves     = split64Half m64initial
       (mL, mR)   = roundFn halves roundKeys
       m64        = (mR `shiftL` 32) .|. mL

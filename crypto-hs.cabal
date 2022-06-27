@@ -30,6 +30,7 @@ library
       Common
       Des.Common
       Des.Core
+      Des.Core.Internal
       Des.KeyGenerator
       Vigenere.Core
       Vigenere.IO
@@ -59,7 +60,7 @@ test-suite crypto-hs-test
   main-is: Driver.hs
   other-modules:
       CaesarTest
-      DesTest
+      Des.Core.InternalTest
       DiscoverTest
       VigenereTest
       Paths_crypto_hs

@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 module Main where
 import qualified Caesar.IO                     as CaesarIO
-import qualified Des
 import qualified Vigenere.IO                   as VigenereIO
 
 main :: IO ()
